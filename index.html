@@ -1,0 +1,204 @@
+<html>
+<head>
+<title>HIT:How long can you survive?</title>
+<style>
+.board {
+    background-image: url("./sky_image.jpg");
+	background-color: #DDD;
+	border: 1px solid #000;
+	background-size:100% 100%;
+	-moz-background-size:100% 100%;
+	position: absolute;
+	margin:auto;
+}
+
+.gridcell {
+}
+
+.ship {
+    background-image: url("./Spaceship.gif_c200");
+	background-color: transparent;
+	background-size:100% 100%;
+	-moz-background-size:100% 100%;
+}
+
+.score {
+	position: absolute;
+	right: 20px;
+	top: 20px;
+	border: 2px solid black;
+	font-size: 30px;
+	padding: 10px;
+}
+</style>
+    <script src="mturk.js"></script>
+<div style="text-align: center; ">
+    <h2>This game could only be played on the website: </h2>
+    <h2>https://chuankaicmu.github.io/Eggplant/</h2>
+    <h2>Please go to the website to play, otherwise the game won't stop :) </h2>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<script>
+var griddim = 100;
+var visible_height = 6;
+
+var board = [
+[0, 0, 0, 0, 0, 1],
+[0, 0, 0, 1, 1, 0],
+[0, 0, 0, 0, 0, 0],
+[0, 1, 0, 0, 0, 1]
+[0, 0, 1, 0, 0, 1],
+[0, 0, 0, 1, 0, 0],
+[0, 1, 0, 0, 1, 0],
+[1, 0, 0, 0, 0, 1]
+[0, 0, 1, 0, 0, 1],
+[0, 0, 0, 1, 1, 0],
+[0, 0, 0, 0, 0, 1],
+[0, 0, 1, 0, 0, 0]
+[0, 1, 0, 0, 0, 0],
+[1, 0, 0, 1, 0, 1],
+[0, 0, 0, 0, 1, 0],
+[1, 0, 0, 0, 0, 1]
+];
+
+var visible_width = board[0].length;
+var board_width = griddim * board[0].length;
+var board_height = griddim * visible_height;
+var ship_location = 0;
+
+var reward_per_turn = 0.001
+var total_reward = 0.000;
+
+var _interval = null;
+
+$(document).ready(function() {
+	var vboard = $("<div id='board' class='board'></div>");
+	vboard.width(board_width);
+	vboard.height(board_height);
+	vboard.css("position", "relative");
+	$("body").append(vboard);
+
+	for(var i=0; i<visible_height; i++) {
+		for(var j=0; j<visible_width; j++) {
+			var gridcell = $("<div class='gridcell'></div>");
+			gridcell.width(griddim);
+			gridcell.height(griddim);
+			gridcell.css("position", "absolute");
+			gridcell.css("left", (j*griddim)+"px");
+			gridcell.css("top", (i*griddim)+"px");
+			gridcell.attr("id", "cell_" + j + "_" + i)
+
+			vboard.append(gridcell);
+		}
+	}
+
+	var ship = $("<div class='ship'></div>");
+	ship.width(griddim);
+	ship.height(griddim);
+	ship.css("position", "absolute");
+	ship.css("left", (ship_location*griddim)+"px");
+	ship.css("top", ((visible_height-1)*griddim)+"px");
+	vboard.append(ship);
+
+	$(document).keydown(function(e) {
+		console.log("ship: " + ship_location + " " + e.which);
+
+		if(e.which==37) {
+  			// left arrow clicked
+  			ship_location -= 1;
+  			if(ship_location < 0) ship_location = visible_width - 1;
+		} else if(e.which == 39) {
+  			// right arrow clicked
+  			ship_location += 1;
+  			if(ship_location >= visible_width) ship_location = 0;
+		}
+	});
+	alert("If you're ready, click on the button to start!\nWarning: The game could only be played on the website:\nhttps://chuankaicmu.github.io/Eggplant/");
+
+
+	_interval = setInterval(function() {
+		update();
+
+	}, 500);
+
+});
+$("#mturk_form").submit()
+function update() {
+	var offset = Math.floor(new Date().getTime() / 1000.0);
+
+	for(var i=0; i<visible_height; i++) {
+
+		var y = (offset + i) % board.length;
+
+		for(var x=0; x<board[y].length; x++) {
+			var ry = visible_height-i;
+
+			if(board[y][x] == 0) {
+				$("#cell_" + x + "_" + ry).css("background-color", "transparent");
+				$("#cell_" + x + "_" + ry).css("background-image", "none");
+
+
+			} else {
+				$("#cell_" + x + "_" + ry).css("background-image", "url(./Monster.gif)");
+				$("#cell_" + x + "_" + ry).css("background-color", "transparent");
+				$("#cell_" + x + "_" + ry).css("background-size", "100% 100%");
+				$("#cell_" + x + "_" + ry).css("-moz-background-size", "100% 100%");
+
+			}
+		}
+	}
+
+	$(".ship").css("left", (ship_location*griddim)+"px");
+
+	console.log("#cell_" + ship_location + "_" + (visible_height-1) + "||" + $("#cell_" + ship_location + "_" + (visible_height-1)).css("background-image"));
+
+	if($("#cell_" + ship_location + "_" + (visible_height-1)).css("background-image") == 'url("https://chuankaicmu.github.io/Eggplant/Monster.gif")' && total_reward >= 0.005) {
+		gameover();  //Fixed the problem that if the start is on the monster, the game will immediately over
+		window.close()
+	}
+    if (total_reward < 0.1){
+	total_reward += reward_per_turn;
+	total_reward = Math.round(total_reward * 1000)/1000.0;
+	$(".score").html("$" + total_reward);
+	}
+	if (total_reward == 0.1){
+	win();
+	window.close();
+	}
+}
+
+function gameover() {
+	clearInterval(_interval);
+
+	alert("GAME OVER! Result submitted! The game window will be closed.");
+    $("#mturk_form").submit()
+	window.close();
+
+}
+function win(){
+    clearInterval(_interval);
+    alert("Congratulations! You've survived to the last second! The game window will be closed.");
+    $("#mturk_form").submit()
+    window.close();
+}
+
+
+</script>
+
+
+</head>
+<body>
+
+<div class="score">$0.000</div>
+
+
+<form id="mturk_form">
+    <input id="money", name = "score")>
+    </form>
+
+<script>
+//document.write(Math.floor(new Date().getTime() / 1000.0) % board_width);
+</script>
+</body>
+</html>

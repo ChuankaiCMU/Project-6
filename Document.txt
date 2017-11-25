@@ -1,0 +1,3 @@
+1. Changed the background, the figure of the spaceship, and other details
+2. Fixed the bug that if the start is on the monster, the game will immediately over
+3. Make the game more fun.
